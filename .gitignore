@@ -232,3 +232,9 @@ pingme.txt
 #################
 
 *.userprefs
+
+#################
+## Local Builds
+#################
+
+PKHeXKY-build/
