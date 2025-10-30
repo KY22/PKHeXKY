@@ -11,13 +11,13 @@ docker run --rm -v pkhex-volume:/pkhex-output pkhex-builder
 
 # 3. Extract to host
 echo "Extract to host"
-mkdir -p ./PKHeXKY-build
-chmod -R lan:lan ./PKHeXKY-build
-docker run --rm -v pkhex-volume:/source -v $(pwd)/PKHeXKY-build://home/lan/Git/PKHeXKY alpine cp -r /source/. /home/lan/Git/PKHeXKY/
+mkdir -p ./Build
+chown -R lan:lan ./Build
+docker run --rm -v pkhex-volume:/source -v $(pwd)/Build://home/lan/Git/PKHeXKY alpine cp -r /source/. /home/lan/Git/PKHeXKY/
 
 # 4. Verify the extracted files
 echo "Verify extracted files"
-ls -la ./PKHeXKY-build/
+ls -la ./Build/
 
 # 5. Clean up (optional)
 echo "Clean up, delete volume"
