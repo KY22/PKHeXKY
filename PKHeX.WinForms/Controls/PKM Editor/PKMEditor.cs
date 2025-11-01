@@ -1953,9 +1953,6 @@ public sealed partial class PKMEditor : UserControl, IMainEditor
         if (ModifierKeys.HasFlag(Keys.Shift))
         {
             m.SetPlusFlags(Entity, p, PlusRecordApplicatorOption.LegalCurrent);
-            if (Entity is PA9 { IsAlpha: true, PersonalInfo: { } pi } pa9)
-                PlusRecordApplicator.SetPlusFlagsSpecific(pa9, pi, pi.AlphaMove);
-
             UpdateLegality();
             return;
         }
@@ -2205,7 +2202,7 @@ public sealed partial class PKMEditor : UserControl, IMainEditor
             return;
 
         var met = Util.ToInt32(TB_MetLevel.Text);
-        var metLevel = (byte)Math.Clamp(0, 100, met);
+        var metLevel = (byte)Math.Clamp(met, 0, 100);
         var suggest = l.GetSuggestedObedienceLevel(Entity, metLevel);
 
         var current = Util.ToInt32(TB_ObedienceLevel.Text);
