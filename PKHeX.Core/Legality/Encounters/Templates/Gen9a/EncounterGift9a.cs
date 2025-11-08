@@ -199,6 +199,8 @@ public sealed record EncounterGift9a(ushort Species, byte Form, byte Level, byte
     {
         if (GetParams(PersonalTable.ZA[Species, Form]).TryGetSeed(pk, out seed))
             return SeedCorrelationResult.Success;
+        if (pk.IsShiny && !LumioseSolver.SearchShiny1)
+            return SeedCorrelationResult.Ignore;
         return SeedCorrelationResult.Invalid;
     }
 
@@ -268,11 +270,11 @@ public sealed record EncounterGift9a(ushort Species, byte Form, byte Level, byte
             (int)LanguageID.French => "A.Z.",
             (int)LanguageID.Italian => "AZ",
             (int)LanguageID.German => "Azett",
-            (int)LanguageID.Spanish => "A. Z.",
+            (int)LanguageID.Spanish => "A. Z.", // nbsp 0xA0 instead of 0x20
             (int)LanguageID.Korean => "AZ",
             (int)LanguageID.ChineseS => "ＡＺ",
             (int)LanguageID.ChineseT => "ＡＺ",
-            (int)LanguageID.SpanishL => "A. Z.",
+            (int)LanguageID.SpanishL => "A. Z.", // nbsp 0xA0 instead of 0x20
             _ => throw new ArgumentOutOfRangeException(nameof(language), language, null),
         },
         TrainerGift9a.Stunfisk => language switch
