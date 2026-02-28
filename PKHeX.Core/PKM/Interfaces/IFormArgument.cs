@@ -50,30 +50,51 @@ public interface IFormArgument
 /// </summary>
 public static class FormArgumentUtil
 {
-    /// <summary>
-    /// Sets the suggested Form Argument to the <see cref="pk"/>.
-    /// </summary>
-    public static void SetSuggestedFormArgument(this PKM pk, ushort originalSpecies = 0)
+    extension(PKM pk)
     {
-        if (pk is not IFormArgument)
-            return;
-        uint value = IsFormArgumentTypeDatePair(pk.Species, pk.Form)
-            ? GetFormArgumentMax(pk.Species, pk.Form, pk.Context)
-            : GetFormArgumentMinEvolution(pk.Species, originalSpecies);
-        if (pk.Species is (int)Hoopa && pk.Format >= 8)
-            value = 0; // S/V does not set the argument for Hoopa
-        pk.ChangeFormArgument(value);
+        /// <summary>
+        /// Sets the suggested Form Argument to the <see cref="pk"/>.
+        /// </summary>
+        public void SetSuggestedFormArgument(ushort species, byte form, EntityContext current, EvolutionHistory history, ushort originalSpecies = 0)
+        {
+            if (pk is not IFormArgument)
+                return;
+            uint value = IsFormArgumentTypeDatePair(species, form)
+                ? GetFormArgumentMax(species, form, current)
+                : GetFormArgumentMinEvolution(species, originalSpecies);
+            if (IsFormArgumentAbleToStay0(species, form, history))
+                value = 0;
+            pk.ChangeFormArgument(value);
+        }
+
+        /// <summary>
+        /// Modifies the <see cref="IFormArgument"/> values for the provided <see cref="pk"/> to the requested <see cref="value"/>.
+        /// </summary>
+        public void ChangeFormArgument(uint value)
+        {
+            if (pk is not IFormArgument f)
+                return;
+            f.ChangeFormArgument(pk.Species, pk.Form, pk.Context, value);
+        }
     }
 
     /// <summary>
-    /// Modifies the <see cref="IFormArgument"/> values for the provided <see cref="pk"/> to the requested <see cref="value"/>.
+    /// Checks if the Form Argument can stay zero due to different games having different uses/behaviors of the value.
     /// </summary>
-    public static void ChangeFormArgument(this PKM pk, uint value)
+    public static bool IsFormArgumentAbleToStay0(ushort species, byte form, EvolutionHistory history) => species switch
     {
-        if (pk is not IFormArgument f)
-            return;
-        f.ChangeFormArgument(pk.Species, pk.Form, pk.Context, value);
-    }
+        // S/V does not set the argument for Hoopa
+        (int)Hoopa => history.HasVisitedGen9 || history.HasVisitedZA,
+
+        // Does not set the argument for Farfetch'd (Galar)
+        (int)Farfetchd when form == 1 => history.HasVisitedGen9 || history.HasVisitedSWSH,
+        (int)Sirfetchd => history.HasVisitedGen9 || history.HasVisitedSWSH,
+
+        // Z-A does not set the argument for Gimmighoul/Gholdengo
+        (int)Gimmighoul or (int)Gholdengo => history.HasVisitedZA,
+
+        _ => false,
+    };
 
     /// <summary>
     /// Modifies the <see cref="IFormArgument"/> values for the provided inputs to the requested <see cref="value"/>.
@@ -93,7 +114,7 @@ public static class FormArgumentUtil
 
         var max = GetFormArgumentMax(species, form, context);
         f.FormArgumentRemain = (byte)value;
-        if (value == max || (value == 0 && species is (int)Hoopa && form == 1 && context.Generation() >= 8))
+        if (value == max || (value == 0 && species is (int)Hoopa && form == 1 && context.IsEraHOME))
         {
             f.FormArgumentElapsed = f.FormArgumentMaximum = 0;
             return;
@@ -111,29 +132,27 @@ public static class FormArgumentUtil
     /// <param name="species">Entity Species</param>
     /// <param name="form">Entity Form</param>
     /// <param name="context">Context to check with.</param>
-    public static uint GetFormArgumentMax(ushort species, byte form, EntityContext context)
+    public static uint GetFormArgumentMax(ushort species, byte form, EntityContext context) => species switch
     {
-        var gen = context.Generation();
-        return species switch
-        {
-            (int)Furfrou when form != 0 => 5,
-            (int)Hoopa when form == 1 => 3,
-            (int)Yamask when form == 1 => 9999,
-            (int)Runerigus when form == 0 => 9999,
-            (int)Alcremie => (uint)AlcremieDecoration.Ribbon,
-            (int)Qwilfish when form == 1 && gen >= 8 => 9999,
-            (int)Overqwil => 9999, // 20
-            (int)Stantler or (int)Wyrdeer when gen >= 8 => 9999,
-            (int)Basculin when form == 2 => 9999, // 294
-            (int)Basculegion => 9999, // 294
-            (int)Primeape or (int)Annihilape when gen >= 8 => 9999,
-            (int)Bisharp or (int)Kingambit when gen >= 8 => 9999,
-            (int)Gimmighoul => 998,
-            (int)Gholdengo => 999,
-            (int)Koraidon or (int)Miraidon => 1,
-            _ => 0,
-        };
-    }
+        (int)Furfrou when form != 0 => 5,
+        (int)Hoopa when form == 1 => 3,
+        (int)Yamask when form == 1 => 9999,
+        (int)Runerigus when form == 0 => 9999,
+        (int)Alcremie => (uint)AlcremieDecoration.Ribbon,
+        (int)Qwilfish when form == 1 && context.IsEraHOME => 9999,
+        (int)Overqwil => 9999, // 20
+        (int)Stantler or (int)Wyrdeer when context.IsEraHOME => 9999,
+        (int)Basculin when form == 2 => 9999, // 294
+        (int)Basculegion => 9999, // 294
+        (int)Primeape or (int)Annihilape when context.IsEraHOME => 9999,
+        (int)Bisharp or (int)Kingambit when context.IsEraHOME => 9999,
+        (int)Gimmighoul => 998,
+        (int)Gholdengo => 999,
+        (int)Koraidon or (int)Miraidon => 1,
+        (int)Farfetchd when form == 1 && context.IsEraHOME => 9999,
+        (int)Sirfetchd when context.IsEraHOME => 9999,
+        _ => 0,
+    };
 
     /// <summary>
     /// Gets the minimum value the <see cref="IFormArgument.FormArgument"/> value can be to satisfy an evolution requirement.
@@ -148,6 +167,7 @@ public static class FormArgumentUtil
         (int)Basculin when currentSpecies == (int)Basculegion => 294u,
         (int)Mankey or (int)Primeape when currentSpecies == (int)Annihilape => 20u,
         (int)Pawniard or (int)Bisharp when currentSpecies == (int)Kingambit => 3u,
+        (int)Farfetchd when currentSpecies == (int)Sirfetchd => 3u,
         (int)Gimmighoul when currentSpecies == (int)Gholdengo => 999u,
         _ => 0u,
     };

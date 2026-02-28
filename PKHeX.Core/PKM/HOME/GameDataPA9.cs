@@ -273,9 +273,12 @@ public sealed class GameDataPA9 : HomeOptional1, IGameDataSide<PA9>, IScaledSize
         Obedience_Level = pkh.MetLevel;
 
         var pi = PersonalTable.ZA.GetFormEntry(pkh.Species, pkh.Form);
-        Ability = (ushort)pi.GetAbilityAtIndex(AbilityNumber >> 1);
+        var index = AbilityNumber >> 1;
+        if (index >= pi.AbilityCount)
+            index = 0;
+        Ability = (ushort)pi.GetAbilityAtIndex(index);
 
         var level = Experience.GetLevel(pkh.EXP, pi.EXPGrowth);
-        this.ResetMoves(pkh.Species, pkh.Form, level, LearnSource9ZA.Instance, EntityContext.Gen9);
+        this.ResetMoves(pkh.Species, pkh.Form, level, LearnSource9ZA.Instance, EntityContext.Gen9a);
     }
 }

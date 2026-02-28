@@ -1,3 +1,5 @@
+using System.ComponentModel;
+
 namespace PKHeX.Core;
 
 /// <summary>
@@ -21,7 +23,7 @@ public enum Shiny : byte
     AlwaysSquare,
 
     /// <summary> PID is fixed to a specified value. </summary>
-    FixedValue,
+    [Browsable(false)] FixedValue,
 }
 
 /// <summary>
@@ -31,22 +33,25 @@ public static class ShinyExtensions
 {
     public static bool ShowSquareBeforeGen8 { get; set; }
 
-    public static bool IsValid(this Shiny s, PKM pk) => s switch
+    extension(Shiny s)
     {
-        Shiny.Always => pk.IsShiny,
-        Shiny.Never => !pk.IsShiny,
-        Shiny.AlwaysSquare => pk.ShinyXor == 0,
-        Shiny.AlwaysStar => pk.ShinyXor == 1,
-        _ => true,
-    };
+        public bool IsValid(PKM pk) => s switch
+        {
+            Shiny.Always => pk.IsShiny,
+            Shiny.Never => !pk.IsShiny,
+            Shiny.AlwaysSquare => pk.ShinyXor == 0,
+            Shiny.AlwaysStar => pk.ShinyXor == 1,
+            _ => true,
+        };
 
-    public static bool IsShiny(this Shiny s) => s switch
-    {
-        Shiny.Always => true,
-        Shiny.AlwaysSquare => true,
-        Shiny.AlwaysStar => true,
-        _ => false,
-    };
+        public bool IsShiny() => s switch
+        {
+            Shiny.Always => true,
+            Shiny.AlwaysSquare => true,
+            Shiny.AlwaysStar => true,
+            _ => false,
+        };
+    }
 
     public static Shiny GetType(PKM pk)
     {
@@ -54,7 +59,7 @@ public static class ShinyExtensions
         if (!shiny)
             return Shiny.Never;
 
-        if (IsSquareShinyExist(pk))
+        if (IsSquareShinyExist(pk) && pk.Context.IsSquareShinyDifferentiated)
             return Shiny.AlwaysSquare;
         return Shiny.AlwaysStar;
     }

@@ -63,7 +63,7 @@ public sealed class EncounterGenerator3 : IEncounterGenerator
         bool emerald = pk.E;
         byte gender = pk.Gender;
         if (pk.Species is (int)Species.Marill or (int)Species.Azumarill)
-            gender = EntityGender.GetFromPIDAndRatio(pk.EncryptionConstant, 0x3F);
+            gender = EntityGender.GetFromPID(pk.EncryptionConstant, EntityGender.MM);
 
         foreach (var enc in iterator)
         {
@@ -90,7 +90,7 @@ public sealed class EncounterGenerator3 : IEncounterGenerator
 
             var evo = LeadFinder.GetLevelConstraint(pk, chain, slot, 3);
             var lead = LeadFinder.GetLeadInfo3(slot, info.PIDIV, evo, emerald, gender, pk.Format);
-            if (!lead.IsValid())
+            if (!lead.IsValid)
             {
                 defer.Update(DeferralType.SlotNumber, slot);
                 continue;

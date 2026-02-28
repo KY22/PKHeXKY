@@ -112,6 +112,8 @@ public static class LumioseRNG
             return false;
         pk.Nature = pk.StatNature = nature;
 
+        // If Hyperspace, the player can have an active Teensy/Humungo boost. The scale is pre-determined outside of the seed=>pa9, consider it not correlated or traceable.
+        // When calling the method to verify the entity, pass SizeType9.VALUE instead.
         pk.Scale = enc.SizeType.GetSizeValue(enc.Scale, ref rand);
         return true;
     }
@@ -268,6 +270,8 @@ public static class LumioseRNG
             return false;
 
         // Scale
+        // If Hyperspace, the player can have an active Teensy/Humungo boost. The scale is pre-determined outside of the seed=>pa9, consider it not correlated or traceable.
+        // When calling the method to verify the entity, pass SizeType9.VALUE instead.
         {
             var value = enc.SizeType.GetSizeValue(enc.Scale, ref rand);
             if (pk is IScaledSize3 s)
@@ -317,12 +321,14 @@ public static class LumioseRNG
         else // Never
         {
             if (ShinyUtil.GetIsShiny6(fakeTID, pid)) // battled
-                pid ^= 0x1000_0000;
+                pid = AntiShiny(pid);
             if (ShinyUtil.GetIsShiny6(pk.ID32, pid)) // captured
-                pid ^= 0x1000_0000;
+                pid = AntiShiny(pid);
         }
         return pid;
     }
+
+    public static uint AntiShiny(uint pid) => pid ^ 0x1000_0000;
 
     private static bool IsMatchUnknownPreFillIVs(PKM pk, in GenerateParam9a enc, Xoroshiro128Plus rand)
     {

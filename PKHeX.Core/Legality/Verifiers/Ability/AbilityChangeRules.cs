@@ -169,7 +169,7 @@ public static class AbilityChangeRules
         {
             var evo = evos[i];
             var pi = table[evo.Species, evo.Form];
-            if (!pi.GetIsAbility12Same())
+            if (!pi.IsAbility12Same)
                 return true;
         }
         return false;
@@ -184,7 +184,7 @@ public static class AbilityChangeRules
         {
             var evo = evos[i];
             var pi = table[evo.Species, evo.Form];
-            if (pi.GetIsAbilityHiddenUnique())
+            if (pi.IsAbilityHiddenUnique)
                 return true;
         }
 
@@ -222,16 +222,36 @@ public static class AbilityChangeRules
         {
             var evo = evos[i];
             var pi = table[evo.Species, evo.Form];
-            if (revert && !pi.GetIsAbility12Same())
+            if (revert && !pi.IsAbility12Same)
                 return true;
-            if (!pi.GetIsAbilityHiddenUnique())
+            if (!pi.IsAbilityHiddenUnique)
                 continue;
-            if (abilityIndex == 1 || !pi.GetIsAbility12Same())
+            if (abilityIndex == 1 || !pi.IsAbility12Same)
                 return true;
             revert = true;
         }
 
         // Some species have a distinct hidden ability only on another form, and can change between that form and its current form.
         return abilityIndex == 1 && IsFormChangeDifferentHidden(evos[0]); // can't change to second index
+    }
+
+    /// <summary>
+    /// Gets the suggested ability value for an evolved entity based on its original encounter and current form.
+    /// </summary>
+    public static int GetExpectedAbilityZA<TEntity, TEnc>(TEntity pk, TEnc enc, int abilityFlag)
+        where TEntity : PKM
+        where TEnc : ISpeciesForm
+    {
+        var index = abilityFlag >> 1;
+        if (index is not (0 or 1 or 2))
+            index = 0;
+
+        var species = pk.Species;
+        var table = PersonalTable.ZA;
+        var pi = table[enc.Species, enc.Form];
+        if (FormInfo.HasMegaForm(species) || species is (int)Species.Aegislash)
+            pi = table[species, pk.Form];
+
+        return pi.GetAbilityAtIndex(index);
     }
 }

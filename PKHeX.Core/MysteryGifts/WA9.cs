@@ -8,7 +8,7 @@ namespace PKHeX.Core;
 /// Generation 9 Mystery Gift Template File
 /// </summary>
 public sealed class WA9(Memory<byte> raw) : DataMysteryGift(raw), ILangNick, INature, IAlpha, IRibbonIndex, IMemoryOT,
-    ILangNicknamedTemplate, IEncounterServerDate, IRelearn, IMetLevel, ISeedCorrelation64<PKM>,
+    ILangNicknamedTemplate, IEncounterServerDate, IRelearn, IMetLevel, IEncounter9a,
     IRibbonSetEvent3, IRibbonSetEvent4, IRibbonSetCommon3, IRibbonSetCommon4, IRibbonSetCommon6, IRibbonSetCommon7,
     IRibbonSetCommon8, IRibbonSetMark8, IRibbonSetCommon9, IRibbonSetMark9, IEncounterMarkExtra
 {
@@ -153,7 +153,7 @@ public sealed class WA9(Memory<byte> raw) : DataMysteryGift(raw), ILangNick, INa
     public override byte Form { get => Data[0x272]; set => Data[0x272] = value; }
     public override byte Gender { get => Data[0x273]; set => Data[0x273] = value; }
     public override byte Level { get => Data[0x274]; set => Data[0x274] = value; }
-    public override bool IsEgg { get => Data[0x275] == 1; set => Data[0x275] = value ? (byte)1 : (byte)0; } // before level; might be a flag for random level?
+    public override bool IsEgg { get => Data[0x275] == 1; set => Data[0x275] = value ? (byte)1 : (byte)0; }
     public Nature Nature
     {
         get
@@ -190,7 +190,7 @@ public sealed class WA9(Memory<byte> raw) : DataMysteryGift(raw), ILangNick, INa
         {
             foreach (var value in RibbonSpan)
             {
-                if (((RibbonIndex)value).IsEncounterMark8())
+                if (((RibbonIndex)value).IsEncounterMark8)
                     return true;
             }
             return false;
@@ -203,7 +203,7 @@ public sealed class WA9(Memory<byte> raw) : DataMysteryGift(raw), ILangNick, INa
         {
             foreach (var value in RibbonSpan)
             {
-                if (((RibbonIndex)value).IsEncounterMark9())
+                if (((RibbonIndex)value).IsEncounterMark9)
                     return true;
             }
             return false;
@@ -489,13 +489,12 @@ public sealed class WA9(Memory<byte> raw) : DataMysteryGift(raw), ILangNick, INa
     private void SetMoves(byte currentLevel, PA9 pk, PersonalInfo9ZA pi)
     {
         var (learn, plus) = LearnSource9ZA.GetLearnsetAndPlus(Species, Form);
-        if (Move1 == 0) // Just in case they forget to set moves on an event.
-        {
-            Span<ushort> moves = stackalloc ushort[4];
-            learn.SetEncounterMoves(currentLevel, moves);
-            pk.SetMoves(moves);
-        }
-        PlusRecordApplicator.SetPlusFlagsEncounter(pk, pi, plus, currentLevel);
+        pk.SetPlusFlagsEncounter(pi, plus, currentLevel);
+        if (Move1 != 0) // Just in case they forget to set moves on an event.
+            return;
+        Span<ushort> moves = stackalloc ushort[4];
+        learn.SetEncounterMoves(currentLevel, moves);
+        pk.SetMoves(moves);
     }
 
     private DateOnly GetSuggestedDate()
@@ -822,7 +821,7 @@ public sealed class WA9(Memory<byte> raw) : DataMysteryGift(raw), ILangNick, INa
         foreach (var value in RibbonSpan)
         {
             missing = (RibbonIndex)value;
-            if (!missing.IsEncounterMark8())
+            if (!missing.IsEncounterMark8)
                 continue;
             if (pk is IRibbonSetMark8 m8 && !m8.HasMark8(missing))
                 return true;
@@ -836,13 +835,15 @@ public sealed class WA9(Memory<byte> raw) : DataMysteryGift(raw), ILangNick, INa
             ? SeedCorrelationResult.Success
             : SeedCorrelationResult.Invalid;
 
-    private GenerateParam9a GetParams(PersonalInfo9ZA pi)
+    public LumioseCorrelation Correlation => LumioseCorrelation.SkipTrainer;
+    public byte FlawlessIVCount => GetFlawlessIVCount(IV_HP);
+
+    public GenerateParam9a GetParams(PersonalInfo9ZA pi)
     {
-        const LumioseCorrelation correlation = LumioseCorrelation.SkipTrainer;
         const byte rollCount = 1;
         var hp = IV_HP;
-        var flawless = GetFlawlessIVCount(hp);
-        var ivs = new IndividualValueSet((sbyte)hp, (sbyte)IV_ATK, (sbyte)IV_DEF, (sbyte)IV_SPE, (sbyte)IV_SPA, (sbyte)IV_SPD);
+        var flawless = FlawlessIVCount;
+        var ivs = flawless != 0 ? default : new IndividualValueSet((sbyte)hp, (sbyte)IV_ATK, (sbyte)IV_DEF, (sbyte)IV_SPE, (sbyte)IV_SPA, (sbyte)IV_SPD);
         var sizeType = Scale == 256 ? SizeType9.RANDOM : SizeType9.VALUE;
         var gender = Gender switch
         {
@@ -851,14 +852,14 @@ public sealed class WA9(Memory<byte> raw) : DataMysteryGift(raw), ILangNick, INa
             2 => PersonalInfo.RatioMagicGenderless,
             _ => pi.Gender,
         };
-        return new GenerateParam9a(gender, flawless, rollCount, correlation, sizeType, (byte)Scale, Nature, Ability, Shiny, ivs);
+        return new GenerateParam9a(gender, flawless, rollCount, Correlation, sizeType, (byte)Scale, Nature, Ability, Shiny, ivs);
     }
 
     private static byte GetFlawlessIVCount(int hp)
     {
-        var tryFlawless = 0xFF - hp;
-        if ((uint)tryFlawless < 6)
-            return (byte)tryFlawless;
+        var tryFlawless = hp - 0xFC;
+        if ((uint)tryFlawless < 3)
+            return (byte)(tryFlawless + 1);
         return 0;
     }
 }
