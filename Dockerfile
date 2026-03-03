@@ -1,6 +1,6 @@
 # Dockerfile
 # Stage 1: Build the application
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 
 WORKDIR /src
 
@@ -8,9 +8,11 @@ WORKDIR /src
 COPY . ./
 
 # Restore and build the specific PKHeX solution file
-RUN dotnet restore PKHeX.sln
-RUN dotnet build PKHeX.sln -c Release --no-restore
-RUN dotnet publish PKHeX.WinForms/PKHeX.WinForms.csproj -c Release -o /app/out --no-build --no-restore
+RUN dotnet restore PKHeX.sln && \
+dotnet build PKHeX.sln -c Release --no-restore && \
+dotnet publish PKHeX.WinForms/PKHeX.WinForms.csproj -c Release -o /app/out --no-build --no-restore
+#RUN dotnet publish PKHeX.WinForms/PKHeX.WinForms.csproj -c Release -o /app/out --no-build --no-restore
+#RUN dotnet publish PKHeX.Core/PKHeX.Core.csproj -c Release -o /app/out --no-build --no-restore
 
 # Stage 2: Create runtime image
 FROM alpine:latest AS runtime
