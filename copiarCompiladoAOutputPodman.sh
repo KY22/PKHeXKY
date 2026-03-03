@@ -12,7 +12,7 @@ podman run --rm -v pkhex-volume:/pkhex-output pkhex-builder
 # 3. Extract to host
 echo "Extract to host"
 mkdir -p ./Build
-podman run --rm -v pkhex-volume:/source -v $(pwd)/Build://home/lan/Git/PKHeXKY alpine cp -r /source/. /home/lan/Git/PKHeXKY/
+podman run --rm -v pkhex-volume:/source -v $(pwd)/Build:$HOME/Git/PKHeXKY alpine cp -r /source/. $HOME/Git/PKHeXKY/
 
 # 4. Verify the extracted files
 echo "Verify extracted files"
