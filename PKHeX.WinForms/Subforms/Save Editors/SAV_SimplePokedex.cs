@@ -25,7 +25,7 @@ public partial class SAV_SimplePokedex : Form
     {
         for (var i = 0; i < speciesNames.Length; i++)
         {
-            var text = $"{i+1:000} {speciesNames[i]}";
+            var text = $"{i+1:000} - {speciesNames[i]}";
             CLB_Seen.Items.Add(text);
             CLB_Caught.Items.Add(text);
         }
@@ -69,7 +69,7 @@ public partial class SAV_SimplePokedex : Form
                 ushort species = (ushort)(i + 1);
                 if (!Legal.IsForeignFRLG(species))
                     continue;
-                SAV.SetSeen(species, false);
+                //SAV.SetSeen(species, false); // some can be seen via trainers; don't bother
                 SAV.SetCaught(species, false);
             }
         }

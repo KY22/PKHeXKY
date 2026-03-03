@@ -19,6 +19,10 @@ public sealed class MiscVerifierG3 : Verifier
         if (ParseSettings.AllowGBACrossTransferRSE(pk))
             return;
 
+        // Notes:
+        // Nicknamed by player: all FF'd trash.
+        // In-game trade: clean 00'd with a single FF on each.
+
         // Only FR/LG are released. Only can originate from FR/LG.
         if (pk.Version is not (GameVersion.FR or GameVersion.LG))
             data.AddLine(GetInvalid(TradeNotAvailable));
@@ -27,5 +31,59 @@ public sealed class MiscVerifierG3 : Verifier
 
         if (ItemStorage3FRLG_VC.IsUnreleasedHeld(pk.HeldItem))
             data.AddLine(GetInvalid(ItemUnreleased));
+
+        if ((Ball)pk.Ball is Ball.Dive or Ball.Premier)
+            data.AddLine(GetInvalid(BallUnavailable));
+
+        if (pk is PK3 pk3)
+            VerifyTrash(data, pk3);
+    }
+
+    private void VerifyTrash(LegalityAnalysis data, PK3 pk)
+    {
+        var enc = data.EncounterOriginal;
+        if (enc is EncounterTrade3)
+            VerifyTrashTrade(data, pk);
+        else if (pk.Japanese && !(pk.IsEgg && pk.OriginalTrainerTrash[^1] == 0xFF))
+            VerifyTrashJPN(data, pk);
+        else
+            VerifyTrashINT(data, pk);
+    }
+
+    private void VerifyTrashTrade(LegalityAnalysis data, PK3 pk)
+    {
+        // For in-game trades, zeroes after the first terminator.
+        var trash = pk.OriginalTrainerTrash;
+        int len = TrashBytes8.GetStringLength(trash);
+        if (len == trash.Length)
+            return; // OK
+        if (trash[(len+1)..].ContainsAnyExcept<byte>(0))
+            data.AddLine(GetInvalid(TrashBytesMissingTerminator));
+    }
+
+    private void VerifyTrashJPN(LegalityAnalysis data, PK3 pk)
+    {
+        var trash = pk.OriginalTrainerTrash;
+        // OT name from save file is copied byte-for-byte. Byte 7 & 8 are always zero.
+
+        // PK3 do not store the 8th byte. Check the 7th explicitly.
+        if (trash[^1] != 0x00)
+            data.AddLine(GetInvalid(TrashBytesMissingTerminator));
+
+        int len = TrashBytes8.GetStringLength(trash);
+        if (len >= trash.Length - 2)
+            return; // OK -- invalid lengths will get warned elsewhere
+        if (trash[len..^2].ContainsAnyExcept<byte>(0xFF))
+            data.AddLine(GetInvalid(TrashBytesMissingTerminator));
+    }
+
+    private void VerifyTrashINT(LegalityAnalysis data, PK3 pk)
+    {
+        var trash = pk.OriginalTrainerTrash;
+        // OT name from save file is copied byte-for-byte. All 8 bytes are initialized to FF on new game.
+
+        int len = TrashBytes8.GetStringLength(trash);
+        if (trash[len..].ContainsAnyExcept<byte>(0xFF))
+            data.AddLine(GetInvalid(TrashBytesMissingTerminator));
     }
 }
