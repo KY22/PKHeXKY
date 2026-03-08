@@ -12,7 +12,7 @@ RUN dotnet restore PKHeX.sln && \
 dotnet build PKHeX.sln -c Release --no-restore && \
 dotnet publish PKHeX.WinForms/PKHeX.WinForms.csproj -c Release -o /app/out --no-build --no-restore
 #RUN dotnet publish PKHeX.WinForms/PKHeX.WinForms.csproj -c Release -o /app/out --no-build --no-restore
-#RUN dotnet publish PKHeX.Core/PKHeX.Core.csproj -c Release -o /app/out --no-build --no-restore
+RUN dotnet publish PKHeX.Core/PKHeX.Core.csproj -c Release -o /app/out --no-build --no-restore
 
 # Stage 2: Create runtime image
 FROM alpine:latest AS runtime

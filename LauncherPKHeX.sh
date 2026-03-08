@@ -1,3 +1,2 @@
 #!/bin/bash
-WINEPREFIX=/home/lan/.local/share/wineprefixes/PKHeX/ wine /home/lan/Git/PKHeX/Build/PKHeX.exe
-
+WINEPREFIX=$HOME/.local/share/wineprefixes/WinApps64KY/ wine $HOME/Git/PKHeXKY/Build/PKHeX.exe
